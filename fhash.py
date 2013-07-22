@@ -39,36 +39,55 @@ def process_files(dir,patrn):
 
 #-----------------------------------------
 def find_hash_dups():
-# compare name and hash value
+# compare hash values
 	global hash_table
 	for i in range(len(hash_table)):
 		for j in range(len(hash_table)):
-			if i<>j and hash_table[i][3]==hash_table[j][3] and hash_table[i][4]==hash_table[j][4]:
-				print hash_table[i][2], hash_table[i][4], hash_table[i][3]
+			if i<>j and hash_table[i][3]==hash_table[j][3]:
+				print hash_table[i][2], hash_table[j][2],' - ', hash_table[i][3]
 	return
 
 #---------------------------------------
 def find_name_dups():
-# compare folder names
+# compare file names 
+        global hash_table
+        for i in range(len(hash_table)):
+                for j in range(len(hash_table)):
+                        if (hash_table[i][2]==hash_table[j][2]) and (i<>j): print hash_table[i][2], ' - ', hash_table[i][1], hash_table[j][1]
+        return
+
+#---------------------------------------
+def find_name_dups2():
+# compare folder names with difflib
 	global hash_table
-	i=1
 	for i in range(len(hash_table)):
 		for j in range(len(hash_table)):
-			sss = difflib.SequenceMatcher(None, hash_table[i][2], hash_table[j][2]);
-			if sss.quick_ratio()>0.1 and i<>j: print sss.quick_ratio(), hash_table[i][2], hash_table[j][2]
+			sss = difflib.SequenceMatcher(None, hash_table[i][2], hash_table[j][2])
+			if (sss.quick_ratio()>0.7) and (i<>j): print sss.quick_ratio(), hash_table[i][2], hash_table[j][2]
 	return
 
+#---------------------------------------
+def find_size_dups():
+# compare sizes of the files
+        global hash_table
+        for i in range(len(hash_table)):
+                for j in range(len(hash_table)):
+                        if (hash_table[i][4]==hash_table[j][4])and(i<>j): print hash_table[i][4], ' - ', hash_table[i][2], hash_table[j][2]
+        return
 
 #-------------------------------------------------------
 
-def save_data(fname):
+def save_data( fname ):
 	global hash_table
 
 #	privatekey = RSA.generate(1024, rng)
 #	publickey = privatekey.publickey()
 #	enc_data = publickey.encrypt(hash_table)
 #	dec_data = privatekey.decrypt(enc_data)
-	if os.path.isfile(fname): os.rename(fname, fname+'.old')
+	print fname
+	if os.path.isfile(fname):
+		fname_new=fname+'.old' 
+		os.rename(fname, fname_new)
 	file = open (fname, "w")
 	simplejson.dump(hash_table,file)
 	file.close()
@@ -100,28 +119,36 @@ parser = argparse.ArgumentParser(prog='fhash',description='File hashing and comp
 
 parser.add_argument('-i','--input', help='Input file name',type=str)
 parser.add_argument('-o','--output',help='Database file name',type=str)
-parser.add_argument('-c','--compare',help='Compare the files with database',type=int, choices=[1,2])
+parser.add_argument('-c','--compare',help='Compare the files with database',type=int, choices=[1,2,3,4])
 parser.add_argument('-v','--version',action='version', version='%(prog)s 1.0')
-parser.add_argument('-d','--debug',help='Show debug messages',type=int)
-#parser.add_argument('-g','--generate',help='Generate the file database')
+parser.add_argument('-d','--debug',help='Show debug messages')
 parser.add_argument('directory', help='directory where to look')
 args = parser.parse_args()
-debug_msg(args.source)
 
-#cmd_prompt=sys.argv
+debug_msg('Arguments: ')
+debug_msg(args)
 
-if (args.input=='')and(args.compare==0):
-		debug_msg("generating database",args.input)
+
+if (args.input is None):
+		debug_msg("Generating database",args.input)
 		process_files(args.directory , "*")
-if (args.input<>'')and(args.compare>0):
-		debug_msg("loading database")
-		load(args.input)
+else:
+		debug_msg("Loading database from "+args.input)
+		load_data(args.input)
 if args.compare==2:
-		debug_msg("phase2a - same size dups")
+		debug_msg("Comparing files for same size dups in "+args.directory)
 		find_hash_dups()
 if args.compare==1:
-		debug_msg("phase2b - similar names")
-		#find_name_dups()
-if args.output<>'':
-	save_data(args.output)
+		debug_msg("Comparing same names duplicates in"+args.directory)
+		find_name_dups()
+if args.compare==3:
+                debug_msg("Comparing size duplicates in"+args.directory)
+                find_size_dups()
+if args.compare==4:
+                debug_msg("Comparing similar names duplicates in"+args.directory)
+                find_name_dups2()
+
+if not (args.output is None):
+		debug_msg('Saving the data to '+args.output)
+		save_data(args.output)
 
