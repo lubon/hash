@@ -1,0 +1,17 @@
+ToDo list
+=========
+
+Major features
+---------------
+-filename comparison (achieving x% match)
+-encryption of database
+-action reference for files that are duplicate
+-
+
+Minor improvements
+------------------
+
+-standardise output for all search options
+-versioning in database (or comparison of current and saved state)
+
+

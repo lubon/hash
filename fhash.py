@@ -9,9 +9,10 @@ import fnmatch
 import difflib
 #from Crypto.PublicKey import RSA
 
+version = '1.0'
 hash_table = list()
-hist_file = ''
-log_file = ''
+#hist_file = ''
+#log_file = ''
 
 def hash_file(fname):
 # calculate hash value for a file
@@ -41,9 +42,9 @@ def process_files(dir,patrn):
 def find_hash_dups():
 # compare hash values
 	global hash_table
-	for i in range(len(hash_table)):
-		for j in range(len(hash_table)):
-			if i<>j and hash_table[i][3]==hash_table[j][3]:
+	for i in range(len(hash_table)-1):
+		for j in range(i+1,len(hash_table)):
+			if hash_table[i][3]==hash_table[j][3]:
 				print hash_table[i][2], hash_table[j][2],' - ', hash_table[i][3]
 	return
 
@@ -51,28 +52,28 @@ def find_hash_dups():
 def find_name_dups():
 # compare file names 
         global hash_table
-        for i in range(len(hash_table)):
-                for j in range(len(hash_table)):
-                        if (hash_table[i][2]==hash_table[j][2]) and (i<>j): print hash_table[i][2], ' - ', hash_table[i][1], hash_table[j][1]
+        for i in range(len(hash_table)-1):
+                for j in range(i+1,len(hash_table)):
+                        if (hash_table[i][2]==hash_table[j][2]): print hash_table[i][2], ' - ', hash_table[i][1], hash_table[j][1]
         return
 
 #---------------------------------------
 def find_name_dups2():
 # compare folder names with difflib
 	global hash_table
-	for i in range(len(hash_table)):
-		for j in range(len(hash_table)):
+	for i in range(len(hash_table)-1):
+		for j in range(i+1,len(hash_table)):
 			sss = difflib.SequenceMatcher(None, hash_table[i][2], hash_table[j][2])
-			if (sss.quick_ratio()>0.7) and (i<>j): print sss.quick_ratio(), hash_table[i][2], hash_table[j][2]
+			if (sss.quick_ratio()>0.7): print sss.quick_ratio(), hash_table[i][2], hash_table[j][2]
 	return
 
 #---------------------------------------
 def find_size_dups():
 # compare sizes of the files
         global hash_table
-        for i in range(len(hash_table)):
-                for j in range(len(hash_table)):
-                        if (hash_table[i][4]==hash_table[j][4])and(i<>j): print hash_table[i][4], ' - ', hash_table[i][2], hash_table[j][2]
+        for i in range(len(hash_table)-1):
+                for j in range(i+1,len(hash_table)):
+                        if (hash_table[i][4]==hash_table[j][4]): print hash_table[i][4], ' - ', hash_table[i][2], hash_table[j][2]
         return
 
 #-------------------------------------------------------
@@ -114,27 +115,30 @@ def debug_msg(dmsg):
 
 parser = argparse.ArgumentParser(prog='fhash',description='File hashing and comparing to the result.', usage='%(prog)s [options]', epilog='''
 	Example:
-		fhash -i database.db -c1 /tmp/*.txt
-		fhash -o database.db /tmp/*.txt''')
+		fhash -i database.db -c1
+		fhash -o database.db /directory/''')
 
 parser.add_argument('-i','--input', help='Input file name',type=str)
 parser.add_argument('-o','--output',help='Database file name',type=str)
 parser.add_argument('-c','--compare',help='Compare the files with database',type=int, choices=[1,2,3,4])
-parser.add_argument('-v','--version',action='version', version='%(prog)s 1.0')
+parser.add_argument('-v','--version',action='version', version='%(prog)s '+version)
 parser.add_argument('-d','--debug',help='Show debug messages')
-parser.add_argument('directory', help='directory where to look')
+parser.add_argument('-s','--directory', help='directory where to look')
 args = parser.parse_args()
 
 debug_msg('Arguments: ')
 debug_msg(args)
 
-
 if (args.input is None):
-		debug_msg("Generating database",args.input)
+	if (args.directory is None):
+	  	sys.exit("Error: No directory is specified to initiate database from.")
+	else:
+		debug_msg("Generating database from "+args.directory)
 		process_files(args.directory , "*")
 else:
 		debug_msg("Loading database from "+args.input)
 		load_data(args.input)
+		args.directory=args.input
 if args.compare==2:
 		debug_msg("Comparing files for same size dups in "+args.directory)
 		find_hash_dups()
